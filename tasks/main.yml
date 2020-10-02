@@ -1,0 +1,41 @@
+- name: Set a hostname
+  register: hostname_configured
+  hostname:
+    name: webserv.home
+
+- name: Add /etc/hosts entry
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ ansible_default_ipv4.address }}\twebserv.home"
+  when: hostname_configured.changed
+
+- name: Check if /usr/bin/rootfs-expand exists
+  stat:
+    path: /usr/bin/rootfs-expand
+  register: rootfs_expand
+
+- name: Expand drive
+  command: '/usr/bin/rootfs-expand'
+  register: command_result
+  failed_when: "'resize2fs 1.42.9' not in command_result.stderr"
+  changed_when: "'The filesystem on /dev/mmcblk0p3 is now' in command_result.stdout"
+  ignore_errors: yes
+  when: rootfs_expand.stat.exists == true
+
+- name: Upgrade all packages
+  register: upgrade_all
+  yum:
+    name: '*'
+    state: latest
+
+- name: Install my often used packages
+  yum:
+    name:
+      - net-tools
+      - lsof
+      - python-docker-py
+    state: present
+
+- name: Reboot server
+  reboot:
+  when: upgrade_all.changed
