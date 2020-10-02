@@ -6,7 +6,7 @@
 - name: Add /etc/hosts entry
   lineinfile:
     dest: /etc/hosts
-    line: "{{ ansible_default_ipv4.address }}\twebserv.home"
+    line: "{{ ansible_default_ipv4.address }}\t{{server_name}}"
   when: hostname_configured.changed
 
 - name: Check if /usr/bin/rootfs-expand exists
@@ -33,7 +33,7 @@
     name:
       - net-tools
       - lsof
-      - python-docker-py
+      - vim
     state: present
 
 - name: Reboot server
